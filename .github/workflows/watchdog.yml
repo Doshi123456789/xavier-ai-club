@@ -1,0 +1,97 @@
+# Xavier AI Club site watchdog. Lives in the Pages repo at .github/workflows/watchdog.yml
+# (source of truth: 30-projects/outreach/xavier-ai-club-site/ops/watchdog.yml in the vault).
+#
+# Every hour: check the site + sign-up form -> if down, rebuild GitHub Pages and re-check
+# -> still down: open a "site-down" issue (GitHub emails the owner) -> healthy again: close it.
+name: watchdog
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      simulate_failure:
+        description: "Add a guaranteed-failing check to test the alert path"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  issues: write
+
+concurrency:
+  group: watchdog
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SIMULATE: ${{ inputs.simulate_failure && '--simulate-failure' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Check the site and form
+        id: first
+        continue-on-error: true
+        run: python3 ops/healthcheck.py --report report.md $SIMULATE
+
+      - name: Self-heal - rebuild GitHub Pages
+        if: steps.first.outcome == 'failure'
+        run: |
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || echo "rebuild request failed"
+          sleep 240
+
+      - name: Re-check after the rebuild
+        id: second
+        if: steps.first.outcome == 'failure'
+        continue-on-error: true
+        run: python3 ops/healthcheck.py --report report.md $SIMULATE
+
+      - name: Still down - open or update the site-down issue
+        if: steps.first.outcome == 'failure' && steps.second.outcome == 'failure'
+        run: |
+          gh label create site-down --color B60205 --description "Watchdog: site or form is down" --force
+          {
+            echo "The hourly watchdog found a problem and a Pages rebuild did not fix it."
+            echo
+            cat report.md
+            echo
+            echo "**To fix:** open any Claude Code session in the vault and say:"
+            echo
+            echo "> the AI club site is down, fix it (watchdog issue in xavier-ai-club)"
+            echo
+            echo "The runbook is \`30-projects/outreach/xavier-ai-club-site/CLAUDE.md\`. Most fixes are \`bash ops/deploy.sh\`."
+            echo "This issue closes itself when the site is healthy again."
+            echo
+            echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          } > body.md
+          open_issue=$(gh issue list --label site-down --state open --json number --jq '.[0].number')
+          if [ -n "$open_issue" ]; then
+            gh issue comment "$open_issue" --body-file body.md
+          else
+            gh issue create --title "Xavier AI Club site is down" --label site-down --body-file body.md
+          fi
+          exit 1
+
+      - name: Healthy - close any open site-down issue
+        if: steps.first.outcome == 'success' || steps.second.outcome == 'success'
+        run: |
+          for n in $(gh issue list --label site-down --state open --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "Recovered: every check passes again ($(date -u '+%Y-%m-%d %H:%M UTC'))."
+          done
+
+      - name: Keep-alive (GitHub pauses schedules after 60 quiet days)
+        if: always()
+        run: |
+          last=$(git log -1 --format=%ct)
+          if [ $(( $(date +%s) - last )) -gt $(( 45 * 86400 )) ]; then
+            git config user.name "watchdog"
+            git config user.email "watchdog@users.noreply.github.com"
+            git commit --allow-empty -m "watchdog keep-alive"
+            git push
+          fi
