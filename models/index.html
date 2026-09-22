@@ -55,6 +55,13 @@ td a { color: var(--ink); }
 .who { margin-top: 28px; background: var(--card); border: 1px solid var(--line); padding: 16px; font-size: 15px; }
 .who h2 { font-size: 15px; margin: 0 0 8px; }
 .who ul { margin: 0; padding-left: 18px; }
+.cos { margin-top: 36px; }
+.cos > h2 { font: 900 clamp(28px, 5vw, 40px)/.95 "Arial Narrow", "Helvetica Neue", sans-serif; text-transform: uppercase; margin: 0 0 8px; }
+.cos h3 { font-size: 16px; margin: 22px 0 4px; }
+.cos .group-note { font-size: 14px; color: var(--ink-2); margin: 0 0 10px; max-width: 700px; }
+.cos table { min-width: 640px; }
+.val-cell { font: 700 15px/1.2 Menlo, monospace; white-space: nowrap; }
+.weak { font-size: 11px; color: var(--ink-2); }
 footer { margin-top: 36px; font-size: 14px; color: var(--ink-2); }
 footer a { color: var(--ink); font-weight: 600; }
 </style>
@@ -63,7 +70,7 @@ footer a { color: var(--ink); font-weight: 600; }
 <main>
   <div class="kicker"><span>Xavier AI Club</span><span>The scoreboard</span></div>
   <h1>AI models, compared.</h1>
-  <p class="lede">The big models, closed and open, on one board: how capable they are, what they cost, and whether you can download them. Updated 22 September 2026.</p>
+  <p class="lede">The big models, closed and open, on one board: how capable they are, what they cost, whether you can download them, and what the companies building with AI are worth. Updated 22 September 2026.</p>
 
   <div class="explain">
     <div><b>Closed</b>You can only use it through the company's app or API. You can't see or download the model itself.</div>
@@ -99,6 +106,12 @@ footer a { color: var(--ink); font-weight: 600; }
       <tbody id="rows"></tbody>
     </table></div>
     <p class="note">A dash means we couldn't find an official number, so we left it blank instead of guessing. GPQA Diamond = % right on PhD-level science questions.</p>
+  </section>
+
+  <section class="cos" id="companies" hidden aria-labelledby="cos-h">
+    <h2 id="cos-h">The companies behind the AI</h2>
+    <p class="lede">What they're worth: the price investors paid in their latest funding round, or the market value if they're public. A valuation is a bet on the future, not money in the bank.</p>
+    <div id="co-groups"></div>
   </section>
 
   <section class="who">
@@ -179,6 +192,41 @@ function render() {
   });
 }
 
+const COMPANIES = [{"name":"ByteDance","group":"creative","whatItDoes":"Owns TikTok and CapCut; makes Seedance, its AI video model","builtOn":null,"ycBatch":null,"valuationUSD":550000000000.0,"valuationDate":"2026-02","valuationSource":"https://finance.yahoo.com/news/bytedance-valuation-surges-550-billion-174713731.html","weakSource":false,"note":"Seedance is a model, not a company. Value from a share sale to investors."},{"name":"ElevenLabs","group":"creative","whatItDoes":"AI voices: text-to-speech, voice cloning, dubbing","builtOn":null,"ycBatch":null,"valuationUSD":11000000000.0,"valuationDate":"2026-02","valuationSource":"https://www.cnbc.com/2026/02/04/nvidia-backed-ai-startup-elevenlabs-11-billion-valuation.html","weakSource":false,"note":null},{"name":"Higgsfield AI","group":"creative","whatItDoes":"AI video and image generator for ads and social media","builtOn":null,"ycBatch":null,"valuationUSD":5400000000.0,"valuationDate":"2026-08","valuationSource":"https://techcrunch.com/2026/08/17/higgsfield-raises-400m-series-b-quadrupling-its-valuation-in-8-months-to-5-4b/","weakSource":false,"note":"Quadrupled in 8 months (from $1.3B)."},{"name":"Suno","group":"creative","whatItDoes":"Makes full songs from a text prompt","builtOn":null,"ycBatch":null,"valuationUSD":5400000000.0,"valuationDate":"2026-06","valuationSource":"https://www.bloomberg.com/news/articles/2026-06-03/ai-music-startup-suno-raises-capital-at-5-4-billion-valuation","weakSource":false,"note":null},{"name":"Runway","group":"creative","whatItDoes":"AI video tools for filmmakers and studios","builtOn":null,"ycBatch":null,"valuationUSD":5300000000.0,"valuationDate":"2026-02","valuationSource":"https://www.bloomberg.com/news/articles/2026-02-10/ai-video-startup-runway-valued-at-5-3-billion-with-new-funding","weakSource":false,"note":null},{"name":"Luma AI","group":"creative","whatItDoes":"AI video and 3D generation","builtOn":null,"ycBatch":null,"valuationUSD":4000000000.0,"valuationDate":"2025-11","valuationSource":"https://www.cnbc.com/2025/11/19/luma-ai-raises-900-million-in-funding-led-by-saudi-ai-firm-humain.html","weakSource":false,"note":"Reported as \"upwards of $4 billion\"."},{"name":"Black Forest Labs","group":"creative","whatItDoes":"Makes Flux, an AI image model (Germany)","builtOn":null,"ycBatch":null,"valuationUSD":3250000000.0,"valuationDate":"2025-12","valuationSource":"https://techcrunch.com/2025/12/01/black-forest-labs-raises-300m-at-3-25b-valuation","weakSource":false,"note":null},{"name":"Midjourney","group":"creative","whatItDoes":"AI image generator","builtOn":null,"ycBatch":null,"valuationUSD":null,"valuationDate":null,"valuationSource":null,"weakSource":false,"note":"Never raised outside money, so there's no official valuation."},{"name":"Pika","group":"creative","whatItDoes":"AI video generator and editor","builtOn":null,"ycBatch":null,"valuationUSD":null,"valuationDate":null,"valuationSource":null,"weakSource":false,"note":"No valuation from a reliable source."},{"name":"Cursor (Anysphere)","group":"wrapper","whatItDoes":"AI code editor that writes and fixes code with you","builtOn":"Claude, GPT, Gemini and its own model","ycBatch":null,"valuationUSD":60000000000.0,"valuationDate":"2026-06","valuationSource":"https://www.cnbc.com/2026/06/16/-spacex-to-buy-cursor-ai-parent-anysphere-for-60-billion.html","weakSource":false,"note":"Bought by SpaceX for $60B in stock (closed Aug 2026)."},{"name":"Perplexity","group":"wrapper","whatItDoes":"AI search engine that answers with sources","builtOn":"several companies' models plus its own","ycBatch":null,"valuationUSD":20000000000.0,"valuationDate":"2025-09","valuationSource":"https://techcrunch.com/2025/09/10/perplexity-reportedly-raised-200m-at-20b-valuation/","weakSource":false,"note":"Latest confirmed round; newer talks reported above $30B."},{"name":"Harvey","group":"wrapper","whatItDoes":"AI assistant for lawyers","builtOn":"OpenAI models","ycBatch":null,"valuationUSD":15600000000.0,"valuationDate":"2026-09","valuationSource":"https://www.bloomberg.com/news/articles/2026-09-09/legal-ai-startup-harvey-hits-15-6-billion-value-with-550-million-round","weakSource":false,"note":null},{"name":"Lovable","group":"wrapper","whatItDoes":"Describe an app in plain English and it builds it","builtOn":"Claude and other models","ycBatch":null,"valuationUSD":13300000000.0,"valuationDate":"2026-08","valuationSource":"https://www.bloomberg.com/news/articles/2026-08-12/ai-coding-startup-lovable-raises-400-million-at-13-3-billion-valuation","weakSource":false,"note":null},{"name":"Replit","group":"wrapper","whatItDoes":"Code in your browser; its AI agent builds apps for you","builtOn":"Claude, GPT and others","ycBatch":null,"valuationUSD":9000000000.0,"valuationDate":"2026-03","valuationSource":"https://replit.com/news/funding-announcement","weakSource":false,"note":null},{"name":"Glean","group":"wrapper","whatItDoes":"AI search across a company's own documents and apps","builtOn":"several companies' models","ycBatch":null,"valuationUSD":7200000000.0,"valuationDate":"2025-06","valuationSource":"https://www.cnbc.com/2025/06/10/glean-gen-ai-search-startup-raises-150-million-at-7-billion-value.html","weakSource":false,"note":null},{"name":"Character.ai","group":"wrapper","whatItDoes":"Chat with AI characters","builtOn":null,"ycBatch":null,"valuationUSD":null,"valuationDate":null,"valuationSource":null,"weakSource":false,"note":"Reported values conflict; none reliable."},{"name":"SpaceX","group":"ai-startup","whatItDoes":"Rockets and Starlink; AI flies and lands its boosters","builtOn":null,"ycBatch":null,"valuationUSD":1770000000000.0,"valuationDate":"2026-06","valuationSource":"https://www.cnbc.com/2026/06/03/spacex-ipo-stock-price-roadshow-musk.html","weakSource":false,"note":"Value at its IPO price ($135/share), the biggest IPO ever. Public now, so it moves daily."},{"name":"Anduril","group":"ai-startup","whatItDoes":"AI-powered defense: autonomous drones, sensors, subs","builtOn":null,"ycBatch":null,"valuationUSD":61000000000.0,"valuationDate":"2026-05","valuationSource":"https://www.bloomberg.com/news/articles/2026-05-13/anduril-valued-at-61-billion-in-round-led-by-thrive-andreessen","weakSource":false,"note":null},{"name":"Scale AI","group":"ai-startup","whatItDoes":"Prepares the training data AI models learn from","builtOn":null,"ycBatch":"S16","valuationUSD":29000000000.0,"valuationDate":"2025-06","valuationSource":"https://techcrunch.com/2025/06/13/scale-ai-confirms-significant-investment-from-meta-says-ceo-alexandr-wang-is-leaving/","weakSource":false,"note":"Meta bought 49% for $14.3B."},{"name":"fal.ai","group":"ai-startup","whatItDoes":"Cloud that runs AI image and video models fast","builtOn":null,"ycBatch":"W22","valuationUSD":4500000000.0,"valuationDate":"2025-12","valuationSource":"https://www.bloomberg.com/news/articles/2025-12-09/sequoia-led-funding-vaults-ai-startup-fal-to-4-5-billion-valuation","weakSource":false,"note":null},{"name":"AfterQuery","group":"ai-startup","whatItDoes":"Builds training data for AI models and agents","builtOn":null,"ycBatch":"W25","valuationUSD":3200000000.0,"valuationDate":"2026-09","valuationSource":"https://techcrunch.com/2026/09/01/afterquery-reportedly-becomes-y-combinators-fastest-ever-unicorn-now-valued-at-3-2b/","weakSource":false,"note":"Y Combinator's fastest-ever unicorn ($1B+)."},{"name":"Bland AI","group":"ai-startup","whatItDoes":"AI voice agents that make and answer phone calls","builtOn":null,"ycBatch":"S23","valuationUSD":null,"valuationDate":null,"valuationSource":null,"weakSource":false,"note":"Raised $50M in June 2026 after 180 investors said no; valuation not disclosed."}];
+const GROUPS = [
+  ['creative', 'Make pictures, video, voice and music', 'These companies build their own generative models for creative work.'],
+  ['wrapper', 'Apps built on other companies\' models', 'A "wrapper" doesn\'t train its own giant model. It builds a great product on top of someone else\'s (Claude, GPT, Gemini...). Some of the fastest-growing companies in the world are wrappers.'],
+  ['ai-startup', 'Startups using AI in the real world', 'Defense, rockets, robots: companies where AI runs something physical. YC = Y Combinator, the startup program; W/S/F = winter/summer/fall batch.'],
+];
+const fmtVal = (v) => v == null ? 'Undisclosed' : v >= 1e12 ? '$' + (Math.round(v / 1e10) / 100) + 'T' : v >= 1e9 ? '$' + (v >= 1e11 ? Math.round(v / 1e9) : Math.round(v / 1e7) / 100) + 'B' : '$' + Math.round(v / 1e6) + 'M';
+function renderCompanies() {
+  if (!COMPANIES.length) return;
+  $('companies').hidden = false;
+  const wrap = $('co-groups');
+  GROUPS.forEach(([key, title, note]) => {
+    const list = COMPANIES.filter(c => c.group === key).sort((a, b) => (b.valuationUSD || 0) - (a.valuationUSD || 0));
+    if (!list.length) return;
+    const body = el('tbody');
+    list.forEach(c => {
+      const src = el('td');
+      if (c.valuationSource && c.valuationSource.startsWith('https://')) {
+        src.append(el('a', { href: c.valuationSource, textContent: 'source', rel: 'noopener', target: '_blank' }));
+        if (c.weakSource) src.append(el('div', { className: 'weak', textContent: 'secondary source' }));
+      }
+      const extra = [c.builtOn ? 'Built on ' + c.builtOn : '', c.ycBatch ? 'YC ' + c.ycBatch : '', c.note || ''].filter(Boolean).join(' · ');
+      body.append(el('tr', {}, [
+        el('td', {}, [el('b', { textContent: c.name })]),
+        el('td', {}, [c.whatItDoes, extra ? el('div', { className: 'note', textContent: extra }) : '']),
+        el('td', { className: 'val-cell', textContent: fmtVal(c.valuationUSD) }),
+        el('td', { className: 'num', textContent: c.valuationDate || '–' }),
+        src,
+      ]));
+    });
+    const table = el('table', {}, [el('thead', {}, [el('tr', {}, ['Company', 'What it does', 'Valuation', 'As of', 'Source'].map(h => el('th', { textContent: h })))]), body]);
+    wrap.append(el('h3', { textContent: title }), el('p', { className: 'group-note', textContent: note }), el('div', { className: 'scroll' }, [table]));
+  });
+}
+
 function segment(id, set) {
   $(id).addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
@@ -189,6 +237,7 @@ function segment(id, set) {
 segment('filter', v => { filter = v; });
 segment('sort', v => { sort = v; });
 render();
+renderCompanies();
 </script>
 </body>
 </html>
